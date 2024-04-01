@@ -1,0 +1,28 @@
+#!/bin/bash
+
+### Configure Mongo
+cat <<EOF > /etc/create_mongo_users.js
+db.createUser(
+  {
+    user: "admin",
+    pwd: "${admin_password}",
+    roles: [
+      "userAdminAnyDatabase",
+      "dbAdminAnyDatabase",
+      "readWriteAnyDatabase"
+    ]
+  }
+);
+EOF
+
+
+# Create admin
+sudo mongosh admin --port 27017 --file /etc/create_mongo_users.js
+
+# Activate Autorization for Mongo
+sudo sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+
+# Set ipbind to 0.0.0.0  for Mongo
+sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
+
+sudo systemctl restart mongod.service
