@@ -235,6 +235,18 @@ resource "aws_security_group_rule" "ec2_backend_main_ingress_4" {
   source_security_group_id = aws_security_group.alb_main.id
 }
 
+resource "aws_security_group_rule" "ec2_backend_main_ingress_5" {
+  description       = "[T] Allow SMTPS from ALB to ${local.ec2_backend_main_name}"
+  security_group_id = aws_security_group.ec2_backend_main.id
+
+  type      = "ingress"
+  protocol  = "tcp"
+  from_port = 465
+  to_port   = 465
+
+  source_security_group_id = aws_security_group.alb_main.id
+}
+
 
 #### EC2 frontend main ####
 resource "aws_security_group" "ec2_frontend_main" {
