@@ -31,3 +31,11 @@ data "aws_iam_policy_document" "static" {
     ]
   }
 }
+
+
+
+module "s3_cicd_artifacts" {
+  source = "../../modules/s3"
+
+  bucket_name = "${var.env}-s3-cicd-artifacts-${var.region}-${data.aws_caller_identity.current.account_id}"
+}
