@@ -21,6 +21,7 @@ module "ec2_static_main" {
               sudo unzip awscliv2.zip
               sudo aws/install
               sudo rm -rf awscliv2.zip aws /usr/local/aws-cli/v2/*/dist/aws_completer /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index /usr/local/aws-cli/v2/*/dist/awscli/examples
+              sudo mkdir -p /home/ubuntu/app # create app folder for CICD
               EOF
 
   # Networking
