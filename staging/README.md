@@ -1,0 +1,1 @@
+If you create new DNS subzone and domain managed by GoDaddy - you must create in GoDaddy console create 4 NS records with name-servers of this zone
