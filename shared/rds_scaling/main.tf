@@ -13,9 +13,9 @@ resource "aws_dynamodb_table" "latest_rds_instance" {
   }
 
   global_secondary_index {
-    name               = "SecretNameIndex"
-    hash_key           = "secret_name"
-    projection_type    = "ALL"
+    name            = "SecretNameIndex"
+    hash_key        = "secret_name"
+    projection_type = "ALL"
   }
 }
 
@@ -28,8 +28,8 @@ resource "aws_dynamodb_table_item" "rds_init" {
 
   item = <<ITEM
 {
-  "instance_id": {"S": "rds-instance-1"},
-  "secret_name": {"S": "rds-secret-1"}
+  "instance_id": {"S": "shared-rds-mssql-main"},
+  "secret_name": {"S": "/shared/rds/shared-rds-mssql-main/credentials"}
 }
 ITEM
 }
@@ -42,7 +42,6 @@ ITEM
 locals {
   pymssql_lambda_layer_path = "${path.module}/lambdas/scripts/layers/pymssql"
 }
-
 
 resource "null_resource" "pymssql_layer" {
   provisioner "local-exec" {
@@ -89,7 +88,7 @@ resource "aws_lambda_function" "check_db_count" {
   source_code_hash = data.archive_file.check_db_count_lambda_package.output_base64sha256
   package_type     = "Zip"
 
- layers = [aws_lambda_layer_version.pymssql.arn]
+  layers = [aws_lambda_layer_version.pymssql.arn]
 
   environment {
     variables = {
