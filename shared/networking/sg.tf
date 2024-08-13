@@ -154,7 +154,7 @@ resource "aws_security_group_rule" "ec2_vpn_pritunl_ingress_2" {
   from_port = 443
   to_port   = 443
 
-  cidr_blocks = ["95.134.30.161/32"]
+  cidr_blocks = ["178.93.162.158/32"]
 }
 
 
