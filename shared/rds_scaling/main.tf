@@ -40,18 +40,19 @@ ITEM
 ####### Lambda check_db_count #######
 #####################################
 locals {
-  pymssql_lambda_layer_path = "${path.module}/lambdas/scripts/layers/pymssql"
+    lambda_pymssql_layer_path = "${path.module}/lambdas/layers/pymssql"
+    lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/python/lib/python3.12/site-packages"
 }
 
-resource "null_resource" "pymssql_layer" {
-  provisioner "local-exec" {
-    command = "pip install pymssql==2.3.0 --quiet --only-binary=:all: --target ${local.pymssql_lambda_layer_path}"
-  }
-}
+# resource "null_resource" "pymssql_layer" {
+#   provisioner "local-exec" {
+#     command = "pip install pymssql==2.3.0 --quiet --platform manylinux2014_x86_64 --only-binary=:all: --target ${local.lambda_pymssql_lib_layer_path}"
+#   }
+# }
 
 data "archive_file" "lambda_pymssql_layer" {
   type        = "zip"
-  source_dir  = local.pymssql_lambda_layer_path
+  source_dir  = local.lambda_pymssql_layer_path
   output_path = "${path.module}/lambdas/zip_archives/lambda_pymssql_layer.zip"
 
   depends_on = [null_resource.pymssql_layer]
@@ -80,7 +81,7 @@ resource "aws_lambda_function" "check_db_count" {
   function_name = "check_db_count"
   description   = "Lambda for check count of databases in specified RDS instance. Part of RDS Scaling Solution"
   role          = aws_iam_role.lambda_exec_check_db_count.arn
-  handler       = "lambda_function.lambda_handler"
+  handler       = "check_db_count.lambda_handler"
   architectures = var.lambda_architectures
   runtime       = var.lamba_runtime
 
@@ -163,7 +164,7 @@ resource "aws_lambda_permission" "allow_eventbridge_check_db_count" {
 #   function_name = "update_rds_instance"
 #   description   = "Lambda for creating RDS instance. Part of RDS Scaling Solution"
 #   role          = aws_iam_role.lambda_exec_update_rds_instance.arn
-#   handler        = "lambda_function.lambda_handler"
+#   handler        = "update_rds_instance.lambda_handler"
 #   architectures = var.lambda_architectures
 #   runtime       = var.lamba_runtime
 
