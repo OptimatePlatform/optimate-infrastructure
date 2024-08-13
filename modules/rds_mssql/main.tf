@@ -2,7 +2,7 @@
 
 module "mssql" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "6.5.4"
+  version = "6.8.0"
 
   identifier = var.mssql_name
 
