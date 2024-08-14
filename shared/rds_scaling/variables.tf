@@ -13,7 +13,7 @@ variable "env" {
 variable "lamba_runtime" {
   description = "Lambda functions ryntime"
   type        = string
-  default     = "python3.12"
+  default     = "python3.11"
 }
 
 variable "lambda_architectures" {

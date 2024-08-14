@@ -41,18 +41,18 @@ ITEM
 #####################################
 locals {
     lambda_pymssql_layer_path = "${path.module}/lambdas/layers/pymssql"
-    lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/opt/python/lib/${var.lamba_runtime}/site-packages"
+    lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/python"
 }
 
 resource "null_resource" "pymssql_layer" {
   provisioner "local-exec" {
-    command = "pip install pymssql==2.3.0 --quiet --only-binary=:all: --target ${local.lambda_pymssql_lib_layer_path}"
+    command = "pip install pymssql==2.3.0 --quiet --platform manylinux2014_x86_64 --only-binary=:all: --target ${local.lambda_pymssql_lib_layer_path}"
   }
 }
 
 data "archive_file" "lambda_pymssql_layer" {
   type        = "zip"
-  source_dir  = local.lambda_pymssql_lib_layer_path
+  source_dir  = local.lambda_pymssql_layer_path
   output_path = "${path.module}/lambdas/zip_archives/lambda_pymssql_layer.zip"
 
   depends_on = [null_resource.pymssql_layer]
