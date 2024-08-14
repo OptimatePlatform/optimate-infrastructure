@@ -19,7 +19,6 @@ resource "aws_dynamodb_table" "latest_rds_instance" {
   }
 }
 
-
 ### Just need for init setup
 resource "aws_dynamodb_table_item" "rds_init" {
   table_name = aws_dynamodb_table.latest_rds_instance.name
@@ -36,9 +35,34 @@ ITEM
 
 
 
-#####################################
-####### Lambda check_db_count #######
-#####################################
+##################################################
+####### Common creds for new RDS instances #######
+##################################################
+resource "random_password" "common_rds_master_password" {
+  length           = 32
+  special          = true
+  override_special = "!#%&*()-_=+[]:?"
+}
+
+module "common_rds_master_creds" {
+  source  = "terraform-aws-modules/secrets-manager/aws"
+  version = "1.1.2"
+
+  name        = "/${var.env}/rds/common_rds_scaling_solution/credentials"
+  description = "Secret for new RDS instances that created by scaling solution"
+
+  recovery_window_in_days = 0
+  secret_string = jsonencode({
+    username = "admin",
+    password = random_password.common_rds_master_password.result
+  })
+}
+
+
+
+####################################
+####### Lambda Layer Pymssql #######
+####################################
 locals {
   lambda_pymssql_layer_path     = "${path.module}/lambdas/layers/pymssql"
   lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/python"
@@ -70,57 +94,6 @@ resource "aws_lambda_layer_version" "pymssql" {
   }
 }
 
-data "archive_file" "check_db_count_lambda_package" {
-  type        = "zip"
-  source_file = "${path.module}/lambdas/scripts/check_db_count.py"
-  output_path = "${path.module}/lambdas/packages/check_db_count.zip"
-}
-
-
-resource "aws_lambda_function" "check_db_count" {
-  function_name = "check_db_count"
-  description   = "Lambda for check count of databases in specified RDS instance. Part of RDS Scaling Solution"
-  role          = aws_iam_role.lambda_exec_check_db_count.arn
-  handler       = "check_db_count.lambda_handler"
-  architectures = var.lambda_architectures
-  runtime       = var.lamba_runtime
-  timeout       = 300
-
-  filename         = data.archive_file.check_db_count_lambda_package.output_path
-  source_code_hash = data.archive_file.check_db_count_lambda_package.output_base64sha256
-  package_type     = "Zip"
-
-  layers = [aws_lambda_layer_version.pymssql.arn]
-
-  vpc_config {
-    subnet_ids         = data.terraform_remote_state.networking.outputs.database_subnets
-    security_group_ids = [data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id]
-  }
-
-  environment {
-    variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
-    }
-  }
-}
-
-resource "aws_cloudwatch_event_rule" "lambda_check_db_count_rule" {
-  name                = "lambda_check_db_count_schedule"
-  schedule_expression = "rate(10 minutes)"
-}
-
-resource "aws_cloudwatch_event_target" "check_db_count_target" {
-  rule = aws_cloudwatch_event_rule.lambda_check_db_count_rule.name
-  arn  = aws_lambda_function.check_db_count.arn
-}
-
-resource "aws_lambda_permission" "allow_eventbridge_check_db_count" {
-  statement_id  = "AllowEventBridgeInvokeCheckDbCount"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.check_db_count.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.lambda_check_db_count_rule.arn
-}
 
 
 #################################################

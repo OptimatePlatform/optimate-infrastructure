@@ -53,6 +53,11 @@ variable "port" {
   default = 1433
 }
 
+variable "license_model" {
+  type    = string
+  default = "license-included"
+}
+
 variable "cloudwatch_logs_exports" {
   type    = list(string)
   default = ["error"]

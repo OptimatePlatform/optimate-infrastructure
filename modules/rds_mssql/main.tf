@@ -12,7 +12,7 @@ module "mssql" {
   major_engine_version = var.major_engine_version # DB option group
   port                 = var.port
   instance_class       = var.instance_class
-  license_model        = "license-included"
+  license_model        = var.license_model
 
   # Storage
   storage_type          = var.storage_type
