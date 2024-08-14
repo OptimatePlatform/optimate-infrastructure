@@ -44,9 +44,6 @@ def check_database_count(rds_instance_id, secret_name):
     db_user = secret_value['username']
     db_password = secret_value['password']
 
-    print(db_host)
-    print(db_user)
-    print(db_password)
     for attempt in range(3):
         try:
             conn = pymssql.connect(server=db_host, user=db_user, password=db_password)

@@ -20,7 +20,7 @@ resource "aws_dynamodb_table" "latest_rds_instance" {
 }
 
 
-
+### Just need for init setup
 resource "aws_dynamodb_table_item" "rds_init" {
   table_name = aws_dynamodb_table.latest_rds_instance.name
 
@@ -28,8 +28,8 @@ resource "aws_dynamodb_table_item" "rds_init" {
 
   item = <<ITEM
 {
-  "instance_id": {"S": "shared-rds-mssql-main"},
-  "secret_name": {"S": "/shared/rds/shared-rds-mssql-main/credentials"}
+  "instance_id": {"S": "shared-rds-mssql-main-2"},
+  "secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"}
 }
 ITEM
 }
