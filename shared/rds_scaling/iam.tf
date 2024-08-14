@@ -70,7 +70,9 @@ resource "aws_iam_policy" "lambda_check_db_policy" {
     Statement = [
       {
         Action = [
-          "dynamodb:GetItem"
+          "dynamodb:ListTables",
+          "dynamodb:GetItem",
+          "dynamodb:Scan"
         ],
         Effect   = "Allow",
         Resource = aws_dynamodb_table.latest_rds_instance.arn
@@ -79,6 +81,15 @@ resource "aws_iam_policy" "lambda_check_db_policy" {
         Action = [
           "rds:DescribeDBInstances",
           "rds:ListTagsForResource"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets"
         ],
         Effect   = "Allow",
         Resource = "*"
@@ -95,6 +106,11 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_check_db_count" {
 resource "aws_iam_role_policy_attachment" "lambda_exec_check_db_count_logging" {
   role       = aws_iam_role.lambda_exec_check_db_count.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_check_db_count_vpc" {
+  role       = aws_iam_role.lambda_exec_check_db_count.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 

@@ -40,8 +40,8 @@ ITEM
 ####### Lambda check_db_count #######
 #####################################
 locals {
-    lambda_pymssql_layer_path = "${path.module}/lambdas/layers/pymssql"
-    lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/python"
+  lambda_pymssql_layer_path     = "${path.module}/lambdas/layers/pymssql"
+  lambda_pymssql_lib_layer_path = "${local.lambda_pymssql_layer_path}/python"
 }
 
 resource "null_resource" "pymssql_layer" {
@@ -84,12 +84,18 @@ resource "aws_lambda_function" "check_db_count" {
   handler       = "check_db_count.lambda_handler"
   architectures = var.lambda_architectures
   runtime       = var.lamba_runtime
+  timeout       = 300
 
   filename         = data.archive_file.check_db_count_lambda_package.output_path
   source_code_hash = data.archive_file.check_db_count_lambda_package.output_base64sha256
   package_type     = "Zip"
 
   layers = [aws_lambda_layer_version.pymssql.arn]
+
+  vpc_config {
+    subnet_ids         = data.terraform_remote_state.networking.outputs.database_subnets
+    security_group_ids = [data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id]
+  }
 
   environment {
     variables = {

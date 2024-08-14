@@ -16,6 +16,19 @@ resource "aws_security_group" "rds_mssql_main" {
   }
 }
 
+# Egress rule #
+resource "aws_security_group_rule" "rds_mssql_main_engress_1" {
+  description       = "[T] Allow access from RDS instance: ${local.rds_mssql_main_name}"
+  security_group_id = aws_security_group.rds_mssql_main.id
+
+  type      = "egress"
+  protocol  = "-1"
+  from_port = 0
+  to_port   = 0
+
+  cidr_blocks = ["0.0.0.0/0"]
+}
+
 # Ingress rule #
 resource "aws_security_group_rule" "rds_mssql_main_ingress_1" {
   description       = "[T] Allow access to RDS instance: ${local.rds_mssql_main_name}"
@@ -41,6 +54,17 @@ resource "aws_security_group_rule" "rds_mssql_main_ingress_2" {
   source_security_group_id = aws_security_group.ec2_vpn_pritunl.id
 }
 
+resource "aws_security_group_rule" "rds_mssql_main_ingress_3" {
+  description       = "[T] Allow inter access for RDS instance: ${local.rds_mssql_main_name}"
+  security_group_id = aws_security_group.rds_mssql_main.id
+
+  type      = "ingress"
+  protocol  = "tcp"
+  from_port = 1433
+  to_port   = 1433
+
+  self = true
+}
 
 #### EC2 MongoDB main ####
 resource "aws_security_group" "ec2_mongodb_main" {
