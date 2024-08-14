@@ -21,22 +21,32 @@ def lambda_handler(event, context):
 
     db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
 
+    print("START OF CREATION")
     response = rds.create_db_instance(
         DBInstanceIdentifier=db_instance_identifier,
-        MasterUsername=os.environ['MASTER_USERNAME'],
-        MasterUserPassword=os.environ['MASTER_PASSWORD'],
-        DBInstanceClass=os.environ['DB_INSTANCE_CLASS'],
-        Engine=os.environ['DB_ENGINE'],
-        AllocatedStorage=int(os.environ['ALLOCATED_STORAGE']),
-        VpcSecurityGroupIds=[os.environ['SECURITY_GROUP']],
-        DBSubnetGroupName=os.environ['DB_SUBNET_GROUP_NAME']
+        MasterUsername=common_master_creds['username'],
+        MasterUserPassword=common_master_creds['password'],
+
+        DBInstanceClass=os.environ['RDS_INSTANCE_CLASS'],
+        Port=int(os.environ['RDS_PORT']),
+        Engine=os.environ['RDS_ENGINE'],
+        EngineVersion=os.environ['RDS_ENGINE_VERSION'],
+        LicenseModel=os.environ['RDS_LICENSE_MODEL'],
+        StorageType=os.environ['RDS_STORAGE_TYPE'],
+        AllocatedStorage=50,#int(os.environ['ALLOCATED_STORAGE']),
+        MaxAllocatedStorage=int(os.environ['RDS_MAX_ALLOCATED_STORAGE']),
+
+        VpcSecurityGroupIds=[os.environ['RDS_SECURITY_GROUP_ID']],
+        DBSubnetGroupName=os.environ['RDS_SUBNET_GROUP_NAME']
     )
 
+    print("END OF CREATION")
     db_instance_arn = response['DBInstance']['DBInstanceArn']
 
     waiter = rds.get_waiter('db_instance_available')
     waiter.wait(DBInstanceIdentifier=db_instance_identifier)
 
+    print("END OF WAIT")
     db_instance = rds.describe_db_instances(DBInstanceIdentifier=db_instance_identifier)['DBInstances'][0]
 
     return {

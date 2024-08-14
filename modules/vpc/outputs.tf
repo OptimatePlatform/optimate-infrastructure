@@ -38,6 +38,11 @@ output "database_subnet_group" {
   value       = module.vpc.database_subnet_group
 }
 
+output "database_subnet_group_name" {
+  description = "Name of database subnet group"
+  value       = module.vpc.database_subnet_group_name
+}
+
 output "public_route_table_ids" {
   description = "List of IDs of public route tables"
   value       = module.vpc.public_route_table_ids

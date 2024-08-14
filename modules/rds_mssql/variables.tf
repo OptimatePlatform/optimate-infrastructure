@@ -23,26 +23,6 @@ variable "mssql_security_group" {
 # ================== #
 # Optional variables #
 # ================== #
-variable "engine" {
-  type    = string
-  default = "sqlserver-ex"
-}
-
-variable "engine_version" {
-  type    = string
-  default = "16.00.4105.2.v1"
-}
-
-variable "major_engine_version" {
-  type    = string
-  default = "16.00"
-}
-
-variable "family" {
-  type    = string
-  default = "sqlserver-ex-16.0"
-}
-
 variable "instance_class" {
   type    = string
   default = "db.t3.small"
@@ -51,6 +31,26 @@ variable "instance_class" {
 variable "port" {
   type    = number
   default = 1433
+}
+
+variable "engine" {
+  type    = string
+  default = "sqlserver-ex"
+}
+
+variable "major_engine_version" {
+  type    = string
+  default = "16.00"
+}
+
+variable "engine_version" {
+  type    = string
+  default = "16.00.4105.2.v1"
+}
+
+variable "family" {
+  type    = string
+  default = "sqlserver-ex-16.0"
 }
 
 variable "license_model" {
