@@ -19,6 +19,8 @@ resource "aws_lambda_function" "create_new_rds" {
 
   environment {
     variables = {
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
+
       COMMON_RDS_MASTER_CREDS_SECRET_NAME = module.common_rds_master_creds.secret_id
 
       RDS_INSTANCE_CLASS        = "db.t3.small"
@@ -64,6 +66,16 @@ resource "aws_iam_policy" "lambda_create_new_rds_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
+      {
+        Action = [
+          "dynamodb:ListTables",
+          "dynamodb:UpdateItem",
+          "dynamodb:GetItem",
+          "dynamodb:Scan"
+        ],
+        Effect   = "Allow",
+        Resource = aws_dynamodb_table.latest_rds_instance.arn
+      },
       {
         Action = [
           "rds:*",

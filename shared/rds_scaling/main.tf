@@ -12,15 +12,28 @@ resource "aws_dynamodb_table" "latest_rds_instance" {
     type = "S"
   }
 
+  attribute {
+    name = "active_rds_creation_process"
+    type = "S"
+  }
+
   global_secondary_index {
     name            = "SecretNameIndex"
     hash_key        = "rds_secret_name"
     projection_type = "ALL"
   }
+
+  global_secondary_index {
+    name            = "ActiveRdsCreationProcessIndex"
+    hash_key        = "active_rds_creation_process"
+    projection_type = "ALL"
+  }
 }
 
+
+
 ### Just need for init setup
-resource "aws_dynamodb_table_item" "rds_init" {
+resource "aws_dynamodb_table_item" "latest_rds_instance_init" {
   table_name = aws_dynamodb_table.latest_rds_instance.name
 
   hash_key = "rds_instance_host"
@@ -28,11 +41,11 @@ resource "aws_dynamodb_table_item" "rds_init" {
   item = <<ITEM
 {
   "rds_instance_host": {"S": "shared-rds-mssql-main-2.cgq2xaluqbvg.eu-central-1.rds.amazonaws.com"},
-  "rds_secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"}
+  "rds_secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"},
+  "active_rds_creation_process": {"S": "false"}
 }
 ITEM
 }
-
 
 
 ##################################################
