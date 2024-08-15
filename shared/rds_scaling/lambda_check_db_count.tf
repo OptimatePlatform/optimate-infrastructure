@@ -27,7 +27,7 @@ resource "aws_lambda_function" "check_db_count" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
+      COMMON_RDS_INFO_SECRET_NAME = aws_secretsmanager_secret.latest_rds_instance.name
     }
   }
 }
@@ -78,15 +78,6 @@ resource "aws_iam_policy" "lambda_check_db_count_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      {
-        Action = [
-          "dynamodb:ListTables",
-          "dynamodb:GetItem",
-          "dynamodb:Scan"
-        ],
-        Effect   = "Allow",
-        Resource = aws_dynamodb_table.latest_rds_instance.arn
-      },
       {
         Action = [
           "rds:DescribeDBInstances",

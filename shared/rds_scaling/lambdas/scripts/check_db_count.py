@@ -6,43 +6,24 @@ from botocore.exceptions import ClientError
 import time
 
 
-
-dynamodb = boto3.resource('dynamodb')
 secretsmanager = boto3.client('secretsmanager')
-table_name = os.environ['DYNAMODB_TABLE_NAME']
 
 
 def get_secret_value(secret_name):
     try:
-        response = secretsmanager.get_secret_value(SecretId=secret_name)
-        secret = response['SecretString']
-        return json.loads(secret)
+        secret_data = secretsmanager.get_secret_value(SecretId=secret_name)
+        secret_string = secret_data['SecretString']
+        return json.loads(secret_string)
     except ClientError as e:
         print(f"Error getting secret: {e}")
         raise
 
 
-def get_latest_rds_info():
-    try:
-        table = dynamodb.Table(table_name)
 
-        response = table.scan()
-        data = response['Items']
-
-        rds_secret_name = data[0].get('rds_secret_name')
-        rds_instance_host = data[0].get('rds_instance_host')
-
-        return rds_instance_host, rds_secret_name
-    except ClientError as e:
-        print(f"Error getting latest RDS info: {e}")
-        raise
-
-
-def check_database_count(rds_instance_host, secret_name):
-    secret_value = get_secret_value(secret_name)
+def check_database_count(rds_instance_host, rds_master_username, rds_master_password):
     db_host = rds_instance_host
-    db_user = secret_value['username']
-    db_password = secret_value['password']
+    db_user = rds_master_username
+    db_password = rds_master_password
 
     for attempt in range(3):
         try:
@@ -65,15 +46,21 @@ def check_database_count(rds_instance_host, secret_name):
 
 def lambda_handler(event, context):
     try:
-        rds_instance_host, secret_name = get_latest_rds_info()
+        common_rds_info_secret = get_secret_value(os.environ['COMMON_RDS_INFO_SECRET_NAME'])
+        rds_instance_host = common_rds_info_secret['rds_instance_host']
+        rds_creds_secret_name = common_rds_info_secret['rds_secret_name']
 
-        if not rds_instance_host or not secret_name:
+        common_rds_creds_secret = get_secret_value(rds_creds_secret_name)
+        rds_master_username = common_rds_creds_secret['username']
+        rds_master_password = common_rds_creds_secret['password']
+
+        if not rds_instance_host or not rds_creds_secret_name:
             return {
                 'statusCode': 404,
-                'body': 'Latest RDS Host or secret name not found in DynamoDB'
+                'body': 'Latest RDS Host or secret name not found in common_rds_info_secret'
             }
 
-        db_count = check_database_count(rds_instance_host, secret_name)
+        db_count = check_database_count(rds_instance_host, rds_master_username, rds_master_password)
 
         return {
             'statusCode': 200,

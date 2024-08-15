@@ -1,63 +1,17 @@
-resource "aws_dynamodb_table" "latest_rds_instance" {
-  name         = "RDSInstances"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "rds_instance_host"
-
-  attribute {
-    name = "rds_instance_host"
-    type = "S"
-  }
-  attribute {
-    name = "rds_secret_name"
-    type = "S"
-  }
-
-  attribute {
-    name = "active_rds_creation_process"
-    type = "S"
-  }
-
-  attribute {
-    name = "new_rds_instance_id"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name            = "SecretNameIndex"
-    hash_key        = "rds_secret_name"
-    projection_type = "ALL"
-  }
-
-  global_secondary_index {
-    name            = "ActiveRdsCreationProcessIndex"
-    hash_key        = "active_rds_creation_process"
-    projection_type = "ALL"
-  }
-
-  global_secondary_index {
-    name            = "RDSInstanceID"
-    hash_key        = "new_rds_instance_id"
-    projection_type = "ALL"
-  }
+resource "aws_secretsmanager_secret" "latest_rds_instance" {
+  name = "rds_instances"
 }
 
-
-
-### Just need for init setup
-resource "aws_dynamodb_table_item" "latest_rds_instance_init" {
-  table_name = aws_dynamodb_table.latest_rds_instance.name
-
-  hash_key = "rds_instance_host"
-
-  item = <<ITEM
-{
-  "rds_instance_host": {"S": "shared-rds-mssql-main-2.cgq2xaluqbvg.eu-central-1.rds.amazonaws.com"},
-  "rds_secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"},
-  "active_rds_creation_process": {"S": "false"},
-  "new_rds_instance_id": {"S": "none"}
+resource "aws_secretsmanager_secret_version" "latest_rds_instance_init_data" {
+  secret_id = aws_secretsmanager_secret.latest_rds_instance.id
+  secret_string = jsonencode({
+    rds_instance_host           = "shared-rds-mssql-main-2.cgq2xaluqbvg.eu-central-1.rds.amazonaws.com"
+    rds_secret_name             = "/shared/rds/shared-rds-mssql-main-2/credentials"
+    active_rds_creation_process = "false"
+    new_rds_instance_id         = "none"
+  })
 }
-ITEM
-}
+
 
 
 ##################################################

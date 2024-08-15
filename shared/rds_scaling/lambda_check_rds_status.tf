@@ -17,11 +17,10 @@ resource "aws_lambda_function" "check_rds_status" {
   filename         = data.archive_file.check_rds_status_lambda_package.output_path
   source_code_hash = data.archive_file.check_rds_status_lambda_package.output_base64sha256
   package_type     = "Zip"
-  
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
+      COMMON_RDS_INFO_SECRET_NAME = aws_secretsmanager_secret.latest_rds_instance.name
     }
   }
 }
@@ -54,16 +53,6 @@ resource "aws_iam_policy" "lambda_check_rds_status_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      {
-        Action = [
-          "dynamodb:ListTables",
-          "dynamodb:UpdateItem",
-          "dynamodb:GetItem",
-          "dynamodb:Scan"
-        ],
-        Effect   = "Allow",
-        Resource = aws_dynamodb_table.latest_rds_instance.arn
-      },
       {
         Action = [
           "rds:DescribeDBInstances",

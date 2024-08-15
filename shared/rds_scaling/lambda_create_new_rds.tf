@@ -19,8 +19,7 @@ resource "aws_lambda_function" "create_new_rds" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
-
+      COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
       COMMON_RDS_MASTER_CREDS_SECRET_NAME = module.common_rds_master_creds.secret_id
 
       RDS_INSTANCE_CLASS        = "db.t3.small"
@@ -68,16 +67,6 @@ resource "aws_iam_policy" "lambda_create_new_rds_policy" {
     Statement = [
       {
         Action = [
-          "dynamodb:ListTables",
-          "dynamodb:UpdateItem",
-          "dynamodb:GetItem",
-          "dynamodb:Scan"
-        ],
-        Effect   = "Allow",
-        Resource = aws_dynamodb_table.latest_rds_instance.arn
-      },
-      {
-        Action = [
           "rds:*",
         ],
         Effect   = "Allow",
@@ -91,7 +80,16 @@ resource "aws_iam_policy" "lambda_create_new_rds_policy" {
         ],
         Effect   = "Allow",
         Resource = "*"
-      }
+      },
+      {
+        Action = [
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:PutSecretValue"
+        ],
+        Effect   = "Allow",
+        Resource = aws_secretsmanager_secret.latest_rds_instance.arn
+      },
+
     ]
   })
 }

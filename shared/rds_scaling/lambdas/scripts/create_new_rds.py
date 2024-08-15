@@ -6,92 +6,66 @@ from botocore.exceptions import ClientError
 
 rds = boto3.client('rds')
 secretsmanager = boto3.client('secretsmanager')
-dynamodb = boto3.resource('dynamodb')
 
 def get_secret_value(secret_name):
     try:
         secret_data = secretsmanager.get_secret_value(SecretId=secret_name)
-        secret = secret_data['SecretString']
-        return json.loads(secret)
+        secret_string = secret_data['SecretString']
+        return json.loads(secret_string)
     except ClientError as e:
         print(f"Error getting secret: {e}")
         raise
 
-def update_dynamodb_item_active_rds_creation_process(table_name):
-    table = dynamodb.Table(table_name)
-    scaned_table = table.scan()
-    items = scaned_table['Items']
-    rds_instance_host = items[0].get('rds_instance_host')
-
-    update_active_rds_creation_process = table.update_item(
-        Key={
-            'rds_instance_host': rds_instance_host
-        },
-        UpdateExpression="set active_rds_creation_process = :true_value",
-        ConditionExpression="attribute_exists(rds_instance_host) AND active_rds_creation_process = :false_value",
-        ExpressionAttributeValues={
-            ':true_value': "true",
-            ':false_value': "false"
-        },
-        ReturnValues="UPDATED_NEW"
-    )
-
-    return update_active_rds_creation_process
 
 
-def update_dynamodb_item_new_rds_instance_id(table_name, rds_instance_id):
-    table = dynamodb.Table(table_name)
-    scaned_table = table.scan()
-    items = scaned_table['Items']
-    rds_instance_host = items[0].get('rds_instance_host')
+# def update_secret_value(secret_name, secret_key, key_value):
+#     try:
+#         original_secret = secretsmanager.get_secret_value(SecretId=secret_name)
+#         updated_secret = original_secret.update({secret_key: key_value})
+#         secretsmanager.update_secret(SecretId=secret_name, SecretString=json.dumps(updated_secret))
+#     except ClientError as e:
+#         print(f"Error with secret while updating: {e}")
+#         raise
 
-    update_new_rds_instance_id = table.update_item(
-        Key={
-            'rds_instance_host': rds_instance_host
-        },
-        UpdateExpression="set new_rds_instance_id = :new_value",
-        ConditionExpression="attribute_exists(rds_instance_host) AND new_rds_instance_id = :default_value",
-        ExpressionAttributeValues={
-            ':new_value': rds_instance_id,
-            ':default_value': "none"
-        },
-        ReturnValues="UPDATED_NEW"
-    )
-
-    return update_new_rds_instance_id
-
-
-def get_latest_rds_info_dynamodb(dynamodb_table_name, attribute_name):
+def update_secret_key_value(secret_name, key, new_value):
     try:
-        table = dynamodb.Table(dynamodb_table_name)
+        get_secret_value_response = secretsmanager.get_secret_value(SecretId=secret_name)
+        secret_string = get_secret_value_response['SecretString']
+        secret_dict = json.loads(secret_string)
 
-        scaned_table = table.scan()
-        data = scaned_table['Items']
+        if key in secret_dict:
+            secret_dict[key] = new_value
+        else:
+            print(f"Key '{key}' not found in secret '{secret_name}'.")
+            return
 
-        attribute_value = data[0].get(attribute_name)
+        updated_secret_string = json.dumps(secret_dict)
+        secretsmanager.update_secret(SecretId=secret_name, SecretString=updated_secret_string)
 
-        return attribute_value
-    except ClientError as e:
-        print(f"Error getting data form DynamoDB table: {e}")
-        raise
+        print(f"Key '{key}' successfully updated in secret '{secret_name}'.")
+
+    except Exception as e:
+        print(f"Error updating the secret: {e}")
 
 
 
 def lambda_handler(event, context):
-    common_master_creds = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
+
+    common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
+    common_rds_info_secret = get_secret_value(common_rds_info_secret_name)
+    common_rds_creds_secret = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
 
     db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
 
     print("START OF CREATION")
     try:
-        current_value_of_active_rds_creation_process = get_latest_rds_info_dynamodb()
-        if (current_value_of_active_rds_creation_process == "true"):
+        if (common_rds_info_secret['active_rds_creation_process'] == "true"):
             return
         else:
             create_rds_response = rds.create_db_instance(
                 DBInstanceIdentifier=db_instance_identifier,
-                MasterUsername=common_master_creds['username'],
-                MasterUserPassword=common_master_creds['password'],
+                MasterUsername=common_rds_creds_secret['username'],
+                MasterUserPassword=common_rds_creds_secret['password'],
 
                 DBInstanceClass=os.environ['RDS_INSTANCE_CLASS'],
                 Port=int(os.environ['RDS_PORT']),
@@ -114,11 +88,11 @@ def lambda_handler(event, context):
 
             print(create_rds_response)
             if create_rds_response['DBInstance']['DBInstanceStatus'] == 'creating':
-                print("RDS instance creation in process. Updating DynamoDB")
-                update_dynamodb_item_active_rds_creation_process(os.environ['DYNAMODB_TABLE_NAME'])
-                update_dynamodb_item_new_rds_instance_id((os.environ['DYNAMODB_TABLE_NAME']), create_rds_response['DBInstance']['DBInstanceIdentifier'])
+                print("RDS instance creation in process. Updating common_rds_info_secret")
+                update_secret_key_value(common_rds_info_secret_name, "active_rds_creation_process", "true")
+                update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", create_rds_response['DBInstance']['DBInstanceIdentifier'])
             else:
-                print("RDS instance creation interrapted by error. DynamoDB item not updated.")
+                print("RDS instance creation interrapted by error. common_rds_info_secret value not updated.")
 
     except Exception as e:
         print(f"RDS instance creation interrapted by error: {e}")
