@@ -40,17 +40,8 @@ def lambda_handler(event, context):
         DBSubnetGroupName=os.environ['RDS_SUBNET_GROUP_NAME']
     )
 
-    print("END OF CREATION")
-    db_instance_arn = response['DBInstance']['DBInstanceArn']
-
-    # waiter = rds.get_waiter('db_instance_available')
-    # waiter.wait(DBInstanceIdentifier=db_instance_identifier)
-
-    print("END OF WAIT")
-    db_instance = rds.describe_db_instances(DBInstanceIdentifier=db_instance_identifier)['DBInstances'][0]
-
-    return {
-        'dbInstanceIdentifier': db_instance_identifier,
-        'host': db_instance['Endpoint']['Address'],
-        'port': db_instance['Endpoint']['Port']
-    }
+    # return {
+    #     'dbInstanceIdentifier': db_instance_identifier,
+    #     'host': db_instance['Endpoint']['Address'],
+    #     'port': db_instance['Endpoint']['Port']
+    # }

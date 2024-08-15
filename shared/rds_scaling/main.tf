@@ -1,20 +1,20 @@
 resource "aws_dynamodb_table" "latest_rds_instance" {
   name         = "RDSInstances"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "instance_id"
+  hash_key     = "rds_instance_host"
 
   attribute {
-    name = "instance_id"
+    name = "rds_instance_host"
     type = "S"
   }
   attribute {
-    name = "secret_name"
+    name = "rds_secret_name"
     type = "S"
   }
 
   global_secondary_index {
     name            = "SecretNameIndex"
-    hash_key        = "secret_name"
+    hash_key        = "rds_secret_name"
     projection_type = "ALL"
   }
 }
@@ -23,12 +23,12 @@ resource "aws_dynamodb_table" "latest_rds_instance" {
 resource "aws_dynamodb_table_item" "rds_init" {
   table_name = aws_dynamodb_table.latest_rds_instance.name
 
-  hash_key = "instance_id"
+  hash_key = "rds_instance_host"
 
   item = <<ITEM
 {
-  "instance_id": {"S": "shared-rds-mssql-main-2"},
-  "secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"}
+  "rds_instance_host": {"S": "shared-rds-mssql-main-2.cgq2xaluqbvg.eu-central-1.rds.amazonaws.com"},
+  "rds_secret_name": {"S": "/shared/rds/shared-rds-mssql-main-2/credentials"}
 }
 ITEM
 }

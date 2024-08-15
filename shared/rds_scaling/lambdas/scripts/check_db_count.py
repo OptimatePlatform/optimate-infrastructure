@@ -29,18 +29,18 @@ def get_latest_rds_info():
         response = table.scan()
         data = response['Items']
 
-        secret_name = data[0].get('secret_name')
-        instance_id = data[0].get('instance_id')
+        rds_secret_name = data[0].get('rds_secret_name')
+        rds_instance_host = data[0].get('rds_instance_host')
 
-        return instance_id, secret_name
+        return rds_instance_host, rds_secret_name
     except ClientError as e:
         print(f"Error getting latest RDS info: {e}")
         raise
 
 
-def check_database_count(rds_instance_id, secret_name):
+def check_database_count(rds_instance_host, secret_name):
     secret_value = get_secret_value(secret_name)
-    db_host = secret_value['host']
+    db_host = rds_instance_host
     db_user = secret_value['username']
     db_password = secret_value['password']
 
@@ -48,7 +48,7 @@ def check_database_count(rds_instance_id, secret_name):
         try:
             conn = pymssql.connect(server=db_host, user=db_user, password=db_password)
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM sys.databases")
+            cursor.execute("SELECT COUNT(*) FROM sys.databases WHERE database_id > 5") # list all databases except 4 system and 1 aws custom databases
             db_count = cursor.fetchone()[0]
             conn.close()
             return db_count
@@ -65,15 +65,15 @@ def check_database_count(rds_instance_id, secret_name):
 
 def lambda_handler(event, context):
     try:
-        rds_instance_id, secret_name = get_latest_rds_info()
+        rds_instance_host, secret_name = get_latest_rds_info()
 
-        if not rds_instance_id or not secret_name:
+        if not rds_instance_host or not secret_name:
             return {
                 'statusCode': 404,
-                'body': 'Latest RDS instance or secret name not found in DynamoDB'
+                'body': 'Latest RDS Host or secret name not found in DynamoDB'
             }
 
-        db_count = check_database_count(rds_instance_id, secret_name)
+        db_count = check_database_count(rds_instance_host, secret_name)
 
         return {
             'statusCode': 200,
