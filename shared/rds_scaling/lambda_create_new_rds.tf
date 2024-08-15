@@ -105,8 +105,3 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_create_new_rds_logging" {
   role       = aws_iam_role.lambda_exec_create_new_rds.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
-
-# resource "aws_iam_role_policy_attachment" "lambda_exec_create_new_rds_rds_full_access" {
-#   role       = aws_iam_role.lambda_exec_create_new_rds.name
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
-# }

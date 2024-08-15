@@ -1,6 +1,3 @@
-#####################################
-####### Lambda check_db_count #######
-#####################################
 data "archive_file" "check_db_count_lambda_package" {
   type        = "zip"
   source_file = "${path.module}/lambdas/scripts/check_db_count.py"
