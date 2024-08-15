@@ -33,9 +33,9 @@ def lambda_handler(event, context):
         EngineVersion=os.environ['RDS_ENGINE_VERSION'],
         LicenseModel=os.environ['RDS_LICENSE_MODEL'],
         StorageType=os.environ['RDS_STORAGE_TYPE'],
-        AllocatedStorage=50,#int(os.environ['ALLOCATED_STORAGE']),
+        AllocatedStorage=int(os.environ['RDS_ALLOCATED_STORAGE']),
         MaxAllocatedStorage=int(os.environ['RDS_MAX_ALLOCATED_STORAGE']),
-
+        DeletionProtection=bool(os.environ['RDS_DELETION_PROTECTION']),
         VpcSecurityGroupIds=[os.environ['RDS_SECURITY_GROUP_ID']],
         DBSubnetGroupName=os.environ['RDS_SUBNET_GROUP_NAME']
     )
@@ -43,8 +43,8 @@ def lambda_handler(event, context):
     print("END OF CREATION")
     db_instance_arn = response['DBInstance']['DBInstanceArn']
 
-    waiter = rds.get_waiter('db_instance_available')
-    waiter.wait(DBInstanceIdentifier=db_instance_identifier)
+    # waiter = rds.get_waiter('db_instance_available')
+    # waiter.wait(DBInstanceIdentifier=db_instance_identifier)
 
     print("END OF WAIT")
     db_instance = rds.describe_db_instances(DBInstanceIdentifier=db_instance_identifier)['DBInstances'][0]

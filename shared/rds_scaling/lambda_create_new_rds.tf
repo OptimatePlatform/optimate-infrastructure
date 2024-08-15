@@ -21,19 +21,17 @@ resource "aws_lambda_function" "create_new_rds" {
     variables = {
       COMMON_RDS_MASTER_CREDS_SECRET_NAME = module.common_rds_master_creds.secret_id
 
-      RDS_INSTANCE_CLASS = "db.t3.small"
-      RDS_PORT           = "1433"
-      RDS_ENGINE         = "sqlserver-ex"
-      # RDS_MAJOR_ENGINE_VERSION  = "16.00"
-      RDS_ENGINE_VERSION = "16.00.4105.2.v1"
-      # RDS_FAMILY                = "sqlserver-ex-16.0"
+      RDS_INSTANCE_CLASS        = "db.t3.small"
+      RDS_PORT                  = "1433"
+      RDS_ENGINE                = "sqlserver-ex"
+      RDS_ENGINE_VERSION        = "16.00.4105.2.v1"
       RDS_LICENSE_MODEL         = "license-included"
       RDS_STORAGE_TYPE          = "gp3"
-      RDS_ALLOCATED_STORAGE     = "40"
+      RDS_ALLOCATED_STORAGE     = "20"
       RDS_MAX_ALLOCATED_STORAGE = "50"
-
-      RDS_SUBNET_GROUP_NAME = data.terraform_remote_state.networking.outputs.database_subnet_group_name
-      RDS_SECURITY_GROUP_ID = data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id
+      RDS_DELETION_PROTECTION   = "False"
+      RDS_SUBNET_GROUP_NAME     = data.terraform_remote_state.networking.outputs.database_subnet_group_name
+      RDS_SECURITY_GROUP_ID     = data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id
     }
   }
 }
