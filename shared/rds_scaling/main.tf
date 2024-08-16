@@ -1,5 +1,7 @@
 resource "aws_secretsmanager_secret" "latest_rds_instance" {
   name = "rds_instances"
+
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "latest_rds_instance_init_data" {

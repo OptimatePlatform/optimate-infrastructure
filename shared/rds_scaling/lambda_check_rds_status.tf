@@ -12,7 +12,7 @@ resource "aws_lambda_function" "check_rds_status" {
   handler       = "check_rds_status.lambda_handler"
   architectures = var.lambda_architectures
   runtime       = var.lamba_runtime
-  timeout       = 300
+  timeout       = 500
 
   filename         = data.archive_file.check_rds_status_lambda_package.output_path
   source_code_hash = data.archive_file.check_rds_status_lambda_package.output_base64sha256
@@ -20,7 +20,8 @@ resource "aws_lambda_function" "check_rds_status" {
 
   environment {
     variables = {
-      COMMON_RDS_INFO_SECRET_NAME = aws_secretsmanager_secret.latest_rds_instance.name
+      COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
+      COMMON_RDS_MASTER_CREDS_SECRET_NAME = module.common_rds_master_creds.secret_id
     }
   }
 }
@@ -60,6 +61,23 @@ resource "aws_iam_policy" "lambda_check_rds_status_policy" {
         ],
         Effect   = "Allow",
         Resource = "*"
+      },
+      {
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action = [
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:PutSecretValue"
+        ],
+        Effect   = "Allow",
+        Resource = aws_secretsmanager_secret.latest_rds_instance.arn
       }
     ]
   })

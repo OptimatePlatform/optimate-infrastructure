@@ -4,6 +4,7 @@ provider "aws" {
     tags = {
       Terraform   = true,
       Environment = var.env
+      Solution    = "rds_scaling"
     }
   }
 }

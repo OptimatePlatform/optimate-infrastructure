@@ -17,16 +17,6 @@ def get_secret_value(secret_name):
         raise
 
 
-
-# def update_secret_value(secret_name, secret_key, key_value):
-#     try:
-#         original_secret = secretsmanager.get_secret_value(SecretId=secret_name)
-#         updated_secret = original_secret.update({secret_key: key_value})
-#         secretsmanager.update_secret(SecretId=secret_name, SecretString=json.dumps(updated_secret))
-#     except ClientError as e:
-#         print(f"Error with secret while updating: {e}")
-#         raise
-
 def update_secret_key_value(secret_name, key, new_value):
     try:
         get_secret_value_response = secretsmanager.get_secret_value(SecretId=secret_name)
@@ -50,7 +40,6 @@ def update_secret_key_value(secret_name, key, new_value):
 
 
 def lambda_handler(event, context):
-
     common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
     common_rds_info_secret = get_secret_value(common_rds_info_secret_name)
     common_rds_creds_secret = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
@@ -80,7 +69,7 @@ def lambda_handler(event, context):
                 DBSubnetGroupName=os.environ['RDS_SUBNET_GROUP_NAME'],
                 Tags=[
                     {
-                        'Key': 'solution',
+                        'Key': 'Solution',
                         'Value': 'rds_scaling'
                     }
                 ]

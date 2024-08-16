@@ -88,8 +88,7 @@ resource "aws_iam_policy" "lambda_create_new_rds_policy" {
         ],
         Effect   = "Allow",
         Resource = aws_secretsmanager_secret.latest_rds_instance.arn
-      },
-
+      }
     ]
   })
 }
