@@ -2,7 +2,7 @@
 ####### Common RDS info for latest instance #######
 ###################################################
 resource "aws_secretsmanager_secret" "latest_rds_instance" {
-  name = "rds_instances"
+  name = "/${var.env}/rds/latest_instance_scaling_solution"
 
   recovery_window_in_days = 0
 }
@@ -29,8 +29,8 @@ resource "random_password" "common_rds_master_password" {
 }
 
 resource "aws_secretsmanager_secret" "common_rds_master_creds" {
-  name        = "common_rds_master_creds"
-  description = "Secret wi master creds for new RDS instances. Part of RDS scaling solution"
+  name        = "/${var.env}/rds/common_rds_master_creds"
+  description = "Secret with master creds for new RDS instances. Part of RDS scaling solution"
 
   recovery_window_in_days = 0
 }
@@ -83,9 +83,12 @@ resource "aws_lambda_layer_version" "pymssql" {
 #################################################
 ####### Step Function Create RDS instance #######
 #################################################
+locals {
+  step_function_check_rds_status_name = "${var.env}-check-rds-status"
+}
 
 resource "aws_sfn_state_machine" "check_rds_status" {
-  name     = "check_rds_status"
+  name     = local.step_function_check_rds_status_name
   role_arn = aws_iam_role.step_functions.arn
 
   definition = <<JSON
@@ -100,7 +103,7 @@ resource "aws_sfn_state_machine" "check_rds_status" {
       "Retry": [
         {
           "ErrorEquals": ["States.TaskFailed"],
-          "IntervalSeconds": 300,
+          "IntervalSeconds": ${var.rds_instance_status_polling_frequency},
           "MaxAttempts": 20,
           "BackoffRate": 1.0
         }
@@ -110,7 +113,7 @@ resource "aws_sfn_state_machine" "check_rds_status" {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.RDS status",
+          "Variable": "$.rds_status",
           "StringEquals": "available",
           "Next": "Success"
         }

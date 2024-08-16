@@ -119,7 +119,6 @@ def lambda_handler(event, context):
     try:
         common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
         common_rds_info_secret = get_secret_value(common_rds_info_secret_name)
-        common_rds_creds_secret = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
 
         rds_instance_host = common_rds_info_secret['rds_instance_host']
         rds_creds_secret_name = common_rds_info_secret['rds_secret_name']
@@ -142,9 +141,13 @@ def lambda_handler(event, context):
                     print("Exit. Due to active_rds_creation_process = true")
                     return
                 else:
+                    new_rds_creds_secret = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
+                    new_rds_master_username = new_rds_creds_secret['username']
+                    new_rds_master_password = new_rds_creds_secret['password']
+
                     db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
                     print("Start creation of new RDS instance")
-                    new_rds_instance_response = create_rds_instance(db_instance_identifier, rds_master_username, rds_master_password)
+                    new_rds_instance_response = create_rds_instance(db_instance_identifier, new_rds_master_username, new_rds_master_password)
                     if new_rds_instance_response['DBInstance']['DBInstanceStatus'] == 'creating': # IF rds creating process start withou errors
                         print("RDS instance creation in process. Updating common_rds_info_secret")
                         update_secret_key_value(common_rds_info_secret_name, "active_rds_creation_process", "true")

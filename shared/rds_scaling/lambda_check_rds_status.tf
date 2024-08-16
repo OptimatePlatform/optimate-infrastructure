@@ -4,9 +4,12 @@ data "archive_file" "check_rds_status_lambda_package" {
   output_path = "${path.module}/lambdas/packages/check_rds_status.zip"
 }
 
+locals {
+  check_rds_status_lambda_name = "${var.env}-check-rds-status-lambda"
+}
 
 resource "aws_lambda_function" "check_rds_status" {
-  function_name = "check_rds_status"
+  function_name = local.check_rds_status_lambda_name
   description   = "Lambda for check status of new RDS instance. Part of RDS Scaling Solution"
   role          = aws_iam_role.lambda_exec_check_rds_status.arn
   handler       = "check_rds_status.lambda_handler"
@@ -32,7 +35,7 @@ resource "aws_lambda_function" "check_rds_status" {
 ####### IAM #######
 ###################
 resource "aws_iam_role" "lambda_exec_check_rds_status" {
-  name = "lambda_exec_check_rds_status"
+  name = local.check_rds_status_lambda_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -49,7 +52,7 @@ resource "aws_iam_role" "lambda_exec_check_rds_status" {
 }
 
 resource "aws_iam_policy" "lambda_check_rds_status_policy" {
-  name = "lambda_check_rds_status_policy"
+  name = local.check_rds_status_lambda_name
 
   policy = jsonencode({
     Version = "2012-10-17",

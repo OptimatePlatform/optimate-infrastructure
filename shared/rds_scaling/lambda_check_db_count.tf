@@ -4,10 +4,13 @@ data "archive_file" "check_db_count_lambda_package" {
   output_path = "${path.module}/lambdas/packages/check_db_count.zip"
 }
 
+locals {
+  check_db_count_lambda_name = "${var.env}-check-db-count-lambda"
+}
 
 resource "aws_lambda_function" "check_db_count" {
-  function_name = "check_db_count"
-  description   = "Lambda for check count of databases in specified RDS instance and Create RDS instance if db count more than treshhold. Part of RDS Scaling Solution"
+  function_name = local.check_db_count_lambda_name
+  description   = "Lambda for check count of databases per specified RDS instance and Create RDS instance if db count more than treshhold. Part of RDS Scaling Solution"
   role          = aws_iam_role.lambda_exec_check_db_count.arn
   handler       = "check_db_count.lambda_handler"
   architectures = var.lambda_architectures
@@ -27,7 +30,7 @@ resource "aws_lambda_function" "check_db_count" {
 
   environment {
     variables = {
-      DB_COUNT_PER_RDS_TRESHOLD           = 25
+      DB_COUNT_PER_RDS_TRESHOLD           = var.db_count_per_rds_treshold
       STATE_MACHINE_ARN                   = aws_sfn_state_machine.check_rds_status.arn
       COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
       COMMON_RDS_MASTER_CREDS_SECRET_NAME = aws_secretsmanager_secret.common_rds_master_creds.name
@@ -48,8 +51,8 @@ resource "aws_lambda_function" "check_db_count" {
 }
 
 resource "aws_cloudwatch_event_rule" "lambda_check_db_count_rule" {
-  name                = "lambda_check_db_count_schedule"
-  schedule_expression = "rate(10 minutes)" # How often run check of databases count per latest RDS instance
+  name                = local.check_db_count_lambda_name
+  schedule_expression = var.db_count_per_rds_check_rate
 }
 
 resource "aws_cloudwatch_event_target" "check_db_count_target" {
@@ -71,7 +74,7 @@ resource "aws_lambda_permission" "allow_eventbridge_check_db_count" {
 ####### IAM #######
 ###################
 resource "aws_iam_role" "lambda_exec_check_db_count" {
-  name = "lambda_exec_check_db_count"
+  name = local.check_db_count_lambda_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -88,7 +91,7 @@ resource "aws_iam_role" "lambda_exec_check_db_count" {
 }
 
 resource "aws_iam_policy" "lambda_check_db_count_policy" {
-  name = "lambda_check_db_count_policy"
+  name = local.check_db_count_lambda_name
 
   policy = jsonencode({
     Version = "2012-10-17",

@@ -1,6 +1,6 @@
 ####### Step Function Create RDS instance #######
 resource "aws_iam_role" "step_functions" {
-  name = "step_functions_role"
+  name = local.step_function_check_rds_status_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -17,14 +17,15 @@ resource "aws_iam_role" "step_functions" {
 }
 
 resource "aws_iam_policy" "step_functions" {
-  name = "step_functions"
+  name = local.step_function_check_rds_status_name
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
         Action = [
-          "lambda:InvokeFunction"
+          "lambda:InvokeFunction",
+          "lambda:*",
         ],
         Effect   = "Allow",
         Resource = "*"

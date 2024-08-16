@@ -69,18 +69,15 @@ def lambda_handler(event, context):
 
             print("RDS instance is ready, common_rds_info_secret updated")
             return {
-                'statusCode': 200,
-                'body': json.dumps({'RDS status': 'available'})
+                'rds_status': 'available'
             }
         else:
             print("RDS instance is not ready yet, terminating Lambda execution")
             return {
-                'statusCode': 200,
-                'body': json.dumps({'RDS status': 'not ready'})
+                'rds_status': 'not ready'
             }
     except Exception as e:
         print(f"Error in lambda_handler: {e}")
         return {
-            'statusCode': 500,
-            'body': str(e)
+            'error': str(e)
         }
