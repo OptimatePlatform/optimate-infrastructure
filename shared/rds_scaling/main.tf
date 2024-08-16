@@ -29,7 +29,7 @@ resource "random_password" "common_rds_master_password" {
 }
 
 resource "aws_secretsmanager_secret" "common_rds_master_creds" {
-  name = "common_rds_master_creds"
+  name        = "common_rds_master_creds"
   description = "Secret wi master creds for new RDS instances. Part of RDS scaling solution"
 
   recovery_window_in_days = 0
@@ -84,58 +84,48 @@ resource "aws_lambda_layer_version" "pymssql" {
 ####### Step Function Create RDS instance #######
 #################################################
 
-# resource "aws_sfn_state_machine" "create_rds_instance" {
-#   name     = "create_rds_instance_state_machine"
-#   role_arn = aws_iam_role.step_functions_role.arn
+resource "aws_sfn_state_machine" "check_rds_status" {
+  name     = "check_rds_status"
+  role_arn = aws_iam_role.step_functions.arn
 
-#   definition = jsonencode({
-#     Comment = "State machine to create RDS instance if needed",
-#     StartAt = "CheckDBCount",
-#     States = {
-#       CheckDBCount = {
-#         Type     = "Task",
-#         Resource = aws_lambda_function.check_db_count.arn,
-#         Next     = "CreateRDSInstance",
-#         Catch = [{
-#           ErrorEquals = ["States.ALL"],
-#           Next        = "Fail"
-#         }]
-#       },
-#       CreateRDSInstance = {
-#         Type     = "Task",
-#         Resource = aws_lambda_function.create_rds_instance.arn,
-#         End      = true,
-#         Catch = [{
-#           ErrorEquals = ["States.ALL"],
-#           Next        = "Fail"
-#         }]
-#       },
-#       Fail = {
-#         Type  = "Fail",
-#         Cause = "Error in state machine"
-#       }
-#     }
-#   })
-# }
-
-
-
-##########################################
-####### Lambda update_rds_instance #######
-##########################################
-# resource "aws_lambda_function" "update_rds_instance" {
-#   function_name = "update_rds_instance"
-#   description   = "Lambda for creating RDS instance. Part of RDS Scaling Solution"
-#   role          = aws_iam_role.lambda_exec_update_rds_instance.arn
-#   handler        = "update_rds_instance.lambda_handler"
-#   architectures = var.lambda_architectures
-#   runtime       = var.lamba_runtime
-
-#   filename = "${path.module}/scripts/update_rds_instance.zip"
-
-#   environment {
-#     variables = {
-#       DYNAMODB_TABLE_NAME = aws_dynamodb_table.latest_rds_instance.name
-#     }
-#   }
-# }
+  definition = <<JSON
+{
+  "Comment": "Check RDS status every 5 minutes",
+  "StartAt": "CheckRDSStatus",
+  "States": {
+    "CheckRDSStatus": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.check_rds_status.arn}",
+      "Next": "IsRDSAvailable",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 300,
+          "MaxAttempts": 20,
+          "BackoffRate": 1.0
+        }
+      ]
+    },
+    "IsRDSAvailable": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.RDS status",
+          "StringEquals": "available",
+          "Next": "Success"
+        }
+      ],
+      "Default": "WaitForRDS"
+    },
+    "WaitForRDS": {
+      "Type": "Wait",
+      "Seconds": 300,
+      "Next": "CheckRDSStatus"
+    },
+    "Success": {
+      "Type": "Succeed"
+    }
+  }
+}
+JSON
+}

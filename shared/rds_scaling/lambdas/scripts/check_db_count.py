@@ -1,11 +1,12 @@
 import boto3
 import os
 import json
+import time
 import pymssql
 from botocore.exceptions import ClientError
-import time
 
 
+rds = boto3.client('rds')
 secretsmanager = boto3.client('secretsmanager')
 
 
@@ -18,6 +19,26 @@ def get_secret_value(secret_name):
         print(f"Error getting secret: {e}")
         raise
 
+
+def update_secret_key_value(secret_name, key, new_value):
+    try:
+        get_secret_value_response = secretsmanager.get_secret_value(SecretId=secret_name)
+        secret_string = get_secret_value_response['SecretString']
+        secret_dict = json.loads(secret_string)
+
+        if key in secret_dict:
+            secret_dict[key] = new_value
+        else:
+            print(f"Key '{key}' not found in secret '{secret_name}'.")
+            return
+
+        updated_secret_string = json.dumps(secret_dict)
+        secretsmanager.update_secret(SecretId=secret_name, SecretString=updated_secret_string)
+
+        print(f"Key '{key}' successfully updated in secret '{secret_name}'.")
+
+    except Exception as e:
+        print(f"Error updating the secret: {e}")
 
 
 def check_database_count(rds_instance_host, rds_master_username, rds_master_password):
@@ -43,16 +64,42 @@ def check_database_count(rds_instance_host, rds_master_username, rds_master_pass
     raise Exception("Failed to connect to database after multiple attempts")
 
 
+def create_rds_instance(rds_instance_name, master_username, master_password):
+    create_rds_response = rds.create_db_instance(
+        DBInstanceIdentifier=rds_instance_name,
+        MasterUsername=master_username,
+        MasterUserPassword=master_password,
+
+        DBInstanceClass=os.environ['RDS_INSTANCE_CLASS'],
+        Port=int(os.environ['RDS_PORT']),
+        Engine=os.environ['RDS_ENGINE'],
+        EngineVersion=os.environ['RDS_ENGINE_VERSION'],
+        LicenseModel=os.environ['RDS_LICENSE_MODEL'],
+        StorageType=os.environ['RDS_STORAGE_TYPE'],
+        AllocatedStorage=int(os.environ['RDS_ALLOCATED_STORAGE']),
+        MaxAllocatedStorage=int(os.environ['RDS_MAX_ALLOCATED_STORAGE']),
+        DeletionProtection=bool(os.environ['RDS_DELETION_PROTECTION']),
+        VpcSecurityGroupIds=[os.environ['RDS_SECURITY_GROUP_ID']],
+        DBSubnetGroupName=os.environ['RDS_SUBNET_GROUP_NAME'],
+        Tags=[
+            {
+                'Key': 'Solution',
+                'Value': 'rds_scaling'
+            }
+        ]
+    )
+    return create_rds_response
+
+
 
 def lambda_handler(event, context):
     try:
-        common_rds_info_secret = get_secret_value(os.environ['COMMON_RDS_INFO_SECRET_NAME'])
+        common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
+        common_rds_info_secret = get_secret_value(common_rds_info_secret_name)
+        common_rds_creds_secret = get_secret_value(os.environ['COMMON_RDS_MASTER_CREDS_SECRET_NAME'])
+
         rds_instance_host = common_rds_info_secret['rds_instance_host']
         rds_creds_secret_name = common_rds_info_secret['rds_secret_name']
-
-        common_rds_creds_secret = get_secret_value(rds_creds_secret_name)
-        rds_master_username = common_rds_creds_secret['username']
-        rds_master_password = common_rds_creds_secret['password']
 
         if not rds_instance_host or not rds_creds_secret_name:
             return {
@@ -60,12 +107,32 @@ def lambda_handler(event, context):
                 'body': 'Latest RDS Host or secret name not found in common_rds_info_secret'
             }
 
-        db_count = check_database_count(rds_instance_host, rds_master_username, rds_master_password)
+        common_rds_creds_secret = get_secret_value(rds_creds_secret_name)
+        rds_master_username = common_rds_creds_secret['username']
+        rds_master_password = common_rds_creds_secret['password']
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'db_count': db_count})
-        }
+
+        db_count_per_rds_instance = check_database_count(rds_instance_host, rds_master_username, rds_master_password)
+
+        if db_count_per_rds_instance > int(os.environ['DB_COUNT_PER_RDS_TRESHOLD']):
+            try:
+                db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
+                new_rds_instance_response = create_rds_instance(db_instance_identifier, rds_master_username, rds_master_password)
+
+                if (common_rds_info_secret['active_rds_creation_process'] == "true"):
+                    return
+                else:
+                    print(new_rds_instance_response)
+                    if new_rds_instance_response['DBInstance']['DBInstanceStatus'] == 'creating':
+                        print("RDS instance creation in process. Updating common_rds_info_secret")
+                        update_secret_key_value(common_rds_info_secret_name, "active_rds_creation_process", "true")
+                        update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", new_rds_instance_response['DBInstance']['DBInstanceIdentifier'])
+                    else:
+                        print("RDS instance creation interrapted by error. common_rds_info_secret value not updated.")
+            except Exception as e:
+                print(f"RDS instance creation interrapted by error: {e}")
+
+
     except Exception as e:
         print(f"Error in lambda_handler: {e}")
         return {
