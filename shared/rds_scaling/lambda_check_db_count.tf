@@ -116,7 +116,14 @@ resource "aws_iam_policy" "lambda_check_db_count_policy" {
         ],
         Effect   = "Allow",
         Resource = aws_secretsmanager_secret.latest_rds_instance.arn
-      }
+      },
+      {
+        Action = [
+          "states:StartExecution"
+        ],
+        Effect   = "Allow",
+        Resource = aws_sfn_state_machine.check_rds_status.arn
+      },
     ]
   })
 }

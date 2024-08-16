@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 
 rds = boto3.client('rds')
 secretsmanager = boto3.client('secretsmanager')
+step_functions = boto3.client('stepfunctions')
 
 
 def get_secret_value(secret_name):
@@ -91,6 +92,28 @@ def create_rds_instance(rds_instance_name, master_username, master_password):
     return create_rds_response
 
 
+def invoke_step_function():
+    state_machine_arn = os.environ['STATE_MACHINE_ARN']
+
+    try:
+        response = step_functions.start_execution(
+            stateMachineArn=state_machine_arn,
+            input="{}"  # You can pass any necessary input in JSON format here
+        )
+
+        print(f"Started Step Function execution with ARN: {response['executionArn']}")
+
+        return {
+            'statusCode': 200,
+            'body': f"Started Step Function execution with ARN: {response['executionArn']}"
+        }
+    except Exception as e:
+        print(f"Error starting Step Function: {e}")
+        return {
+            'statusCode': 500,
+            'body': f"Error starting Step Function: {e}"
+        }
+
 
 def lambda_handler(event, context):
     try:
@@ -113,25 +136,26 @@ def lambda_handler(event, context):
 
 
         db_count_per_rds_instance = check_database_count(rds_instance_host, rds_master_username, rds_master_password)
-
         if db_count_per_rds_instance > int(os.environ['DB_COUNT_PER_RDS_TRESHOLD']):
             try:
-                db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
-                new_rds_instance_response = create_rds_instance(db_instance_identifier, rds_master_username, rds_master_password)
-
                 if (common_rds_info_secret['active_rds_creation_process'] == "true"):
+                    print("Exit. Due to active_rds_creation_process = true")
                     return
                 else:
-                    print(new_rds_instance_response)
-                    if new_rds_instance_response['DBInstance']['DBInstanceStatus'] == 'creating':
+                    db_instance_identifier = "shared-rds-mssql-" + str(int(time.time()))
+                    print("Start creation of new RDS instance")
+                    new_rds_instance_response = create_rds_instance(db_instance_identifier, rds_master_username, rds_master_password)
+                    if new_rds_instance_response['DBInstance']['DBInstanceStatus'] == 'creating': # IF rds creating process start withou errors
                         print("RDS instance creation in process. Updating common_rds_info_secret")
                         update_secret_key_value(common_rds_info_secret_name, "active_rds_creation_process", "true")
                         update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", new_rds_instance_response['DBInstance']['DBInstanceIdentifier'])
+                        invoke_step_function() # start checking RDS instance status
                     else:
                         print("RDS instance creation interrapted by error. common_rds_info_secret value not updated.")
             except Exception as e:
                 print(f"RDS instance creation interrapted by error: {e}")
-
+        else:
+            print(f"Exit. Due to db count ({db_count_per_rds_instance}) threshold not breached")
 
     except Exception as e:
         print(f"Error in lambda_handler: {e}")

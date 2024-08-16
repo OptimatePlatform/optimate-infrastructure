@@ -25,7 +25,7 @@ resource "aws_secretsmanager_secret_version" "latest_rds_instance_init_data" {
 resource "random_password" "common_rds_master_password" {
   length           = 32
   special          = true
-  override_special = "!#%&*()-_=+[]:?"
+  override_special = "!#()-_=+[]"
 }
 
 resource "aws_secretsmanager_secret" "common_rds_master_creds" {

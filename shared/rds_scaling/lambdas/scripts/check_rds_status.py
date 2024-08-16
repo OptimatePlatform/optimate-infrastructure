@@ -48,7 +48,6 @@ def update_secret_key_value(secret_name, key, new_value):
         print(f"Error updating the secret: {e}")
 
 
-
 def lambda_handler(event, context):
     try:
         common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
@@ -69,13 +68,16 @@ def lambda_handler(event, context):
             update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", "none")
 
             print("RDS instance is ready, common_rds_info_secret updated")
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'RDS status': 'available'})
+            }
         else:
             print("RDS instance is not ready yet, terminating Lambda execution")
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'RDS status': rds_status})
-        }
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'RDS status': 'not ready'})
+            }
     except Exception as e:
         print(f"Error in lambda_handler: {e}")
         return {
