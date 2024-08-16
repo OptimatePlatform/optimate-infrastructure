@@ -1,3 +1,6 @@
+###################################################
+####### Common RDS info for latest instance #######
+###################################################
 resource "aws_secretsmanager_secret" "latest_rds_instance" {
   name = "rds_instances"
 
