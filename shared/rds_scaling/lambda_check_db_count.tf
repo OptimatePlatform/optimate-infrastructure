@@ -34,7 +34,7 @@ resource "aws_lambda_function" "check_db_count" {
 
 resource "aws_cloudwatch_event_rule" "lambda_check_db_count_rule" {
   name                = "lambda_check_db_count_schedule"
-  schedule_expression = "rate(10 minutes)"
+  schedule_expression = "rate(10 minutes)" # How often run check of databases count per latest RDS instance
 }
 
 resource "aws_cloudwatch_event_target" "check_db_count_target" {

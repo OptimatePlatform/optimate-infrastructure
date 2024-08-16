@@ -66,7 +66,7 @@ def lambda_handler(event, context):
             update_secret_key_value(common_rds_info_secret_name, "active_rds_creation_process", "false")
             update_secret_key_value(common_rds_info_secret_name, "rds_instance_host", rds_endpoint)
             update_secret_key_value(common_rds_info_secret_name, "rds_secret_name", common_rds_creds_secret_name)
-            update_secret_key_value(common_rds_info_secret_name, "new_instance_id", "none")
+            update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", "none")
 
             print("RDS instance is ready, common_rds_info_secret updated")
         else:

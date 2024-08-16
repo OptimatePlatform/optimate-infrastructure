@@ -20,7 +20,7 @@ resource "aws_lambda_function" "create_new_rds" {
   environment {
     variables = {
       COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
-      COMMON_RDS_MASTER_CREDS_SECRET_NAME = module.common_rds_master_creds.secret_id
+      COMMON_RDS_MASTER_CREDS_SECRET_NAME = aws_secretsmanager_secret.common_rds_master_creds.name
 
       RDS_INSTANCE_CLASS        = "db.t3.small"
       RDS_PORT                  = "1433"

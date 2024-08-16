@@ -25,20 +25,20 @@ resource "random_password" "common_rds_master_password" {
   override_special = "!#%&*()-_=+[]:?"
 }
 
-module "common_rds_master_creds" {
-  source  = "terraform-aws-modules/secrets-manager/aws"
-  version = "1.1.2"
-
-  name        = "/${var.env}/rds/common_rds_scaling_solution/credentials"
-  description = "Secret for new RDS instances that created by scaling solution"
+resource "aws_secretsmanager_secret" "common_rds_master_creds" {
+  name = "common_rds_master_creds"
+  description = "Secret wi master creds for new RDS instances. Part of RDS scaling solution"
 
   recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "common_rds_master_creds" {
+  secret_id = aws_secretsmanager_secret.common_rds_master_creds.id
   secret_string = jsonencode({
     username = "admin",
     password = random_password.common_rds_master_password.result
   })
 }
-
 
 
 ####################################
