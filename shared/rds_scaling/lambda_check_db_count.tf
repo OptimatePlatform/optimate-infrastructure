@@ -98,7 +98,9 @@ resource "aws_iam_policy" "lambda_check_db_count_policy" {
     Statement = [
       {
         Action = [
-          "rds:*"
+          "rds:DescribeDBInstances",
+          "rds:CreateDBInstance",
+          "rds:AddTagsToResource"
         ],
         Effect   = "Allow",
         Resource = "*"

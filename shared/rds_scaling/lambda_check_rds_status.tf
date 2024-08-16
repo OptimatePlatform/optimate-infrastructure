@@ -21,6 +21,13 @@ resource "aws_lambda_function" "check_rds_status" {
   source_code_hash = data.archive_file.check_rds_status_lambda_package.output_base64sha256
   package_type     = "Zip"
 
+  layers = [aws_lambda_layer_version.pymssql.arn]
+
+  vpc_config {
+    subnet_ids         = data.terraform_remote_state.networking.outputs.database_subnets
+    security_group_ids = [data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id]
+  }
+
   environment {
     variables = {
       COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
@@ -94,4 +101,9 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_check_rds_status" {
 resource "aws_iam_role_policy_attachment" "lambda_exec_check_rds_status_logging" {
   role       = aws_iam_role.lambda_exec_check_rds_status.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_check_rds_status_vpc" {
+  role       = aws_iam_role.lambda_exec_check_rds_status.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
