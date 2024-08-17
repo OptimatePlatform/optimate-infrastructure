@@ -2,7 +2,8 @@
 ####### Common RDS info for latest instance #######
 ###################################################
 resource "aws_secretsmanager_secret" "latest_rds_instance" {
-  name = "/${var.env}/rds/latest_instance_scaling_solution"
+  name        = "/${var.env}/rds/latest_instance_scaling_solution"
+  description = "Secret to store latest RDS instance information and intermediate data ща active RDS creation process. Part of RDS scaling solution"
 
   recovery_window_in_days = 0
 }

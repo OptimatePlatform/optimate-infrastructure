@@ -1,6 +1,7 @@
 import boto3
 import os
 import json
+import time
 import pymssql
 from botocore.exceptions import ClientError
 
@@ -49,6 +50,29 @@ def update_secret_key_value(secret_name, key, new_value):
         print(f"Error updating the secret: {e}")
 
 
+def update_database_table(rds_instance_host, rds_master_username, rds_master_password, db_name, new_rds_host, new_rds_password):
+    for attempt in range(3):
+        try:
+            conn = pymssql.connect(server=rds_instance_host, user=rds_master_username, password=rds_master_password, database=db_name)
+            cursor = conn.cursor()
+
+            cursor.execute("""INSERT INTO Instances(Id, Name, Password) VALUES (NEWID(), %s, %s)""", (new_rds_host, new_rds_password))
+
+            conn.commit()
+            conn.close()
+
+            return "Insert to Service Database successful"
+
+        except pymssql.DatabaseError as e:
+            print(f"Database error: {e}")
+            time.sleep(10)
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            raise
+    raise Exception("Failed to connect to database after multiple attempts")
+
+
 def lambda_handler(event, context):
     try:
         common_rds_info_secret_name = os.environ['COMMON_RDS_INFO_SECRET_NAME']
@@ -67,8 +91,18 @@ def lambda_handler(event, context):
             update_secret_key_value(common_rds_info_secret_name, "rds_instance_host", rds_endpoint)
             update_secret_key_value(common_rds_info_secret_name, "rds_secret_name", common_rds_creds_secret_name)
             update_secret_key_value(common_rds_info_secret_name, "new_rds_instance_id", "none")
-
             print("RDS instance is ready, common_rds_info_secret updated")
+
+
+            service_rds_secret_name = os.environ['SERVICE_RDS_SECRET_NAME']
+            service_rds_host = get_secret_value(service_rds_secret_name)['host']
+            service_rds_username = get_secret_value(service_rds_secret_name)['username']
+            service_rds_password = get_secret_value(service_rds_secret_name)['password']
+
+            new_rds_secret = get_secret_value(common_rds_info_secret_name)['rds_secret_name']
+            new_rds_password = get_secret_value(new_rds_secret)['password']
+            print(update_database_table(service_rds_host, service_rds_username, service_rds_password, os.environ['SERVICE_DATABASE_NAME'], rds_endpoint, new_rds_password))
+
             return {
                 'rds_status': 'available'
             }

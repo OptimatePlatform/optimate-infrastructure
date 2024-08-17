@@ -43,7 +43,7 @@ resource "aws_lambda_function" "check_db_count" {
       RDS_STORAGE_TYPE          = "gp3"
       RDS_ALLOCATED_STORAGE     = "20"
       RDS_MAX_ALLOCATED_STORAGE = "50"
-      RDS_DELETION_PROTECTION   = "" # empty string = false, other symbols = true
+      RDS_DELETION_PROTECTION   = "true" # empty string = false, other symbols = true
       RDS_SUBNET_GROUP_NAME     = data.terraform_remote_state.networking.outputs.database_subnet_group_name
       RDS_SECURITY_GROUP_ID     = data.terraform_remote_state.networking.outputs.shared_rds_mssql_main_sg_id
     }

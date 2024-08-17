@@ -32,6 +32,8 @@ resource "aws_lambda_function" "check_rds_status" {
     variables = {
       COMMON_RDS_INFO_SECRET_NAME         = aws_secretsmanager_secret.latest_rds_instance.name
       COMMON_RDS_MASTER_CREDS_SECRET_NAME = aws_secretsmanager_secret.common_rds_master_creds.name
+      SERVICE_RDS_SECRET_NAME             = "/shared/rds/shared-rds-mssql-main/credentials" # Secret name where stored connection information where located SERVICE_DATABASE_NAME
+      SERVICE_DATABASE_NAME               = "SchoolConnections" # Database name where exist instances table for storing RDS instances information
     }
   }
 }
