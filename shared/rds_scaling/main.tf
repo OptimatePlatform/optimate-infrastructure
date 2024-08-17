@@ -3,14 +3,14 @@
 ###################################################
 resource "aws_secretsmanager_secret" "latest_rds_instance" {
   name        = "/${var.env}/rds/latest_instance_scaling_solution"
-  description = "Secret to store latest RDS instance information and intermediate data ща active RDS creation process. Part of RDS scaling solution"
+  description = "Secret to store latest RDS instance information and intermediate data of active RDS creation process. Part of RDS scaling solution"
 
   recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "latest_rds_instance_init_data" {
   secret_id = aws_secretsmanager_secret.latest_rds_instance.id
-  secret_string = jsonencode({
+  secret_string = jsonencode({ # Need only for initial setup
     rds_instance_host           = "shared-rds-mssql-main-2.cgq2xaluqbvg.eu-central-1.rds.amazonaws.com"
     rds_secret_name             = "/shared/rds/shared-rds-mssql-main-2/credentials"
     active_rds_creation_process = "false"
