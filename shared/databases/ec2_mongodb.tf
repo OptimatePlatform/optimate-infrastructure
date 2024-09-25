@@ -1,6 +1,6 @@
 module "ec2_mongodb_main" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "5.6.1"
+  version = "5.7.0"
 
   name = data.terraform_remote_state.networking.outputs.ec2_mongodb_main_name
 

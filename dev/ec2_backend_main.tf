@@ -1,6 +1,6 @@
 module "ec2_backend_main" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "5.6.1"
+  version = "5.7.0"
 
   name = "${var.env}-${data.terraform_remote_state.networking.outputs.ec2_backend_main_name}"
 

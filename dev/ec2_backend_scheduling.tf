@@ -1,8 +1,8 @@
-module "ec2_frontend_main" {
+module "ec2_backend_scheduling" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "5.7.0"
 
-  name = "${var.env}-${data.terraform_remote_state.networking.outputs.ec2_frontend_main_name}"
+  name = "${var.env}-${data.terraform_remote_state.networking.outputs.ec2_backend_scheduling_name}"
 
   instance_type = "t2.micro"
   ami           = "ami-023adaba598e661ac" # ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20240301
@@ -12,10 +12,7 @@ module "ec2_frontend_main" {
               #!/bin/bash
               sudo apt update
               sudo apt install -y wget unzip curl apt-transport-https
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-              sudo apt install -y nodejs
-              sudo npm install pm2 -g
-              sudo npm install serve -g
+              sudo snap install dotnet-sdk --classic --channel=7.0
               ### Install AWS cli ###
               sudo curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
               sudo unzip awscliv2.zip
@@ -25,13 +22,13 @@ module "ec2_frontend_main" {
               EOF
 
   # Networking
-  vpc_security_group_ids = [data.terraform_remote_state.networking.outputs.ec2_frontend_main_sg_id]
+  vpc_security_group_ids = [data.terraform_remote_state.networking.outputs.ec2_backend_scheduling_sg_id]
   availability_zone      = element(data.terraform_remote_state.networking.outputs.azs, 0)
   subnet_id              = element(data.terraform_remote_state.networking.outputs.private_subnets, 0)
 
   # IAM
   create_iam_instance_profile = true
-  iam_role_description        = "IAM role for EC2 instance: ${var.env}-${data.terraform_remote_state.networking.outputs.ec2_frontend_main_name}"
+  iam_role_description        = "IAM role for EC2 instance: ${var.env}-${data.terraform_remote_state.networking.outputs.ec2_backend_scheduling_name}"
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
     S3ReadAccess                 = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
@@ -47,8 +44,8 @@ module "ec2_frontend_main" {
   ]
 }
 
-resource "aws_lb_target_group_attachment" "ec2_frontend_main" {
-  target_group_arn = aws_lb_target_group.frontend.arn
-  target_id        = module.ec2_frontend_main.id
-  port             = 3000
+resource "aws_lb_target_group_attachment" "ec2_backend_scheduling" {
+  target_group_arn = aws_lb_target_group.backend.arn
+  target_id        = module.ec2_backend_scheduling.id
+  port             = 5000
 }
