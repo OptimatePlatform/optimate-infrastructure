@@ -23,6 +23,14 @@ resource "aws_lb_target_group" "backend" {
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
 }
 
+resource "aws_lb_target_group" "backend_scheduling" {
+  name        = "${var.env}-backend-scheduling"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "instance"
+  vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
+}
+
 # resource "aws_lb_target_group" "static" {
 #   name        = "${var.env}-static"
 #   port        = 80
@@ -35,6 +43,18 @@ resource "aws_lb_target_group" "backend" {
 
 resource "aws_route53_record" "backend" {
   name    = "${var.env}-${data.terraform_remote_state.networking.outputs.alb_main_name}"
+  type    = "A"
+  zone_id = module.route53_zone.zone_id
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "backend_scheduling" {
+  name    = "${var.env}-backend-scheduling"
   type    = "A"
   zone_id = module.route53_zone.zone_id
 
@@ -120,3 +140,20 @@ resource "aws_lb_listener_rule" "backend" {
   }
 }
 
+
+
+resource "aws_lb_listener_rule" "backend_scheduling" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 98
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_scheduling.arn
+  }
+
+  condition {
+    host_header {
+      values = [aws_route53_record.backend_scheduling.fqdn]
+    }
+  }
+}

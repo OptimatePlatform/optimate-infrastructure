@@ -23,11 +23,17 @@ data "aws_iam_policy_document" "static" {
     }
     effect = "Allow"
     actions = [
-      "s3:GetObject"
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:AbortMultipartUpload",
+      "s3:ListMultipartUploadParts",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads"
     ]
 
     resources = [
-      "arn:aws:s3:::${var.env}-s3-commonpurpose-${var.region}-${data.aws_caller_identity.current.account_id}/files/*"
+      "arn:aws:s3:::${var.env}-s3-commonpurpose-${var.region}-${data.aws_caller_identity.current.account_id}/*",
+      "arn:aws:s3:::${var.env}-s3-commonpurpose-${var.region}-${data.aws_caller_identity.current.account_id}",
     ]
   }
 }
