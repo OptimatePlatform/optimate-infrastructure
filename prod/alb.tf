@@ -23,6 +23,14 @@ resource "aws_lb_target_group" "backend" {
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
 }
 
+resource "aws_lb_target_group" "backend_scheduling" {
+  name        = "${var.env}-backend-scheduling"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "instance"
+  vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
+}
+
 # resource "aws_lb_target_group" "static" {
 #   name        = "${var.env}-static"
 #   port        = 80
@@ -68,6 +76,10 @@ resource "aws_lb_listener_certificate" "api" {
   certificate_arn = aws_acm_certificate.backend.arn
 }
 
+resource "aws_lb_listener_certificate" "backend_scheduling" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = aws_acm_certificate.backend_scheduling.arn
+}
 
 locals {
   main_domain = "optimate.online"
@@ -96,6 +108,23 @@ resource "aws_acm_certificate" "backend" {
 
   subject_alternative_names = [
     "*.api.${local.main_domain}"
+  ]
+
+  tags = {
+    Environment = var.env
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate" "backend_scheduling" {
+  domain_name       = "${var.env}-backend-scheduling.${local.main_domain}"
+  validation_method = "DNS"
+
+  subject_alternative_names = [
+    "*.${var.env}-backend-scheduling.${local.main_domain}"
   ]
 
   tags = {
@@ -155,6 +184,22 @@ resource "aws_lb_listener_rule" "backend" {
   condition {
     host_header {
       values = ["*.api.${local.main_domain}", "api.${local.main_domain}"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "backend_scheduling" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_scheduling.arn
+  }
+
+  condition {
+    host_header {
+      values = ["*.${var.env}-backend-scheduling.${local.main_domain}", "${var.env}-backend-scheduling.${local.main_domain}"]
     }
   }
 }
