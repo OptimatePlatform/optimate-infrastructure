@@ -190,7 +190,7 @@ resource "aws_lb_listener_rule" "backend" {
 
 resource "aws_lb_listener_rule" "backend_scheduling" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = 99
+  priority     = 98
 
   action {
     type             = "forward"
