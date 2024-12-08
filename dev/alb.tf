@@ -22,16 +22,15 @@ resource "aws_lb_target_group" "backend" {
   target_type = "instance"
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
 
-  # health_check {
-  #     protocol = "HTTPS"
-  #     path = "/index.html"
-  #     port = 5000
-  #     healthy_threshold = 5
-  #     unhealthy_threshold = 3
-  #     timeout = 5
-  #     interval = 30
-  #     matcher = "200"
-  #   }
+  health_check {
+      protocol = "HTTP"
+      path = "/index.html"
+      healthy_threshold = 5
+      unhealthy_threshold = 3
+      timeout = 5
+      interval = 30
+      matcher = "200"
+    }
 }
 
 resource "aws_lb_target_group" "backend_blue" {
@@ -158,6 +157,10 @@ resource "aws_lb_listener_rule" "backend" {
       values = [aws_route53_record.backend.fqdn]
     }
   }
+
+  # lifecycle {
+  #   ignore_changes = [ action ]
+  # }
 }
 
 
@@ -177,7 +180,3 @@ resource "aws_lb_listener_rule" "backend_scheduling" {
     }
   }
 }
-
-aws elbv2 modify-rule \
-    --rule-arn "arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5" \
-    --actions Type=forward,TargetGroupArn="arn:aws:elasticloadbalancing:eu-central-1:169411831568:targetgroup/dev-backend-blue/110f8e7f103856d5"
