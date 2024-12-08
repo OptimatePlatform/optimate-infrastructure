@@ -21,7 +21,27 @@ resource "aws_lb_target_group" "backend" {
   protocol    = "HTTP"
   target_type = "instance"
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
+
+  # health_check {
+  #     protocol = "HTTPS"
+  #     path = "/index.html"
+  #     port = 5000
+  #     healthy_threshold = 5
+  #     unhealthy_threshold = 3
+  #     timeout = 5
+  #     interval = 30
+  #     matcher = "200"
+  #   }
 }
+
+resource "aws_lb_target_group" "backend_blue" {
+  name        = "${var.env}-backend-blue"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "instance"
+  vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
+}
+
 
 resource "aws_lb_target_group" "backend_scheduling" {
   name        = "${var.env}-backend-scheduling"
