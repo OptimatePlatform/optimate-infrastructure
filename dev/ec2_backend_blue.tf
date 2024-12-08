@@ -22,7 +22,7 @@ module "ec2_backend_blue" {
               EOF
 
   # Networking
-  vpc_security_group_ids = [data.terraform_remote_state.networking.outputs.ec2_backend_blue_sg_id]
+  vpc_security_group_ids = [data.terraform_remote_state.networking.outputs.ec2_backend_main_sg_id]
   availability_zone      = element(data.terraform_remote_state.networking.outputs.azs, 0)
   subnet_id              = element(data.terraform_remote_state.networking.outputs.private_subnets, 0)
 
