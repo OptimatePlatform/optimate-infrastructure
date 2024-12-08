@@ -178,7 +178,3 @@ resource "aws_lb_listener_rule" "backend_scheduling" {
   }
 }
 
-
-aws elbv2 modify-rule \
-    --rule-arn "arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5" \
-    --actions Type=forward,TargetGroupArn="arn:aws:elasticloadbalancing:eu-central-1:169411831568:targetgroup/dev-backend-blue/110f8e7f103856d5"
