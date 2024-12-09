@@ -23,14 +23,14 @@ resource "aws_lb_target_group" "backend" {
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
 
   health_check {
-      protocol = "HTTP"
-      path = "/health"
-      healthy_threshold = 5
-      unhealthy_threshold = 3
-      timeout = 5
-      interval = 30
-      matcher = "200"
-    }
+    protocol            = "HTTP"
+    path                = "/health"
+    healthy_threshold   = 5
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    matcher             = "200"
+  }
 }
 
 resource "aws_lb_target_group" "backend_blue" {
@@ -39,6 +39,16 @@ resource "aws_lb_target_group" "backend_blue" {
   protocol    = "HTTP"
   target_type = "instance"
   vpc_id      = data.terraform_remote_state.networking.outputs.vpc_id
+
+  health_check {
+    protocol            = "HTTP"
+    path                = "/health"
+    healthy_threshold   = 5
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    matcher             = "200"
+  }
 }
 
 
@@ -143,13 +153,25 @@ resource "aws_lb_listener_rule" "frontend" {
   }
 }
 
+
+
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 99
 
   action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.backend.arn
+        weight = 100
+      }
+
+      target_group {
+        arn    = aws_lb_target_group.backend_blue.arn
+        weight = 0
+      }
+    }
   }
 
   condition {
