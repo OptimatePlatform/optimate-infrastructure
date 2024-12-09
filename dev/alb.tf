@@ -24,7 +24,7 @@ resource "aws_lb_target_group" "backend" {
 
   health_check {
       protocol = "HTTP"
-      path = "/index.html"
+      path = "/health"
       healthy_threshold = 5
       unhealthy_threshold = 3
       timeout = 5
@@ -180,11 +180,3 @@ resource "aws_lb_listener_rule" "backend_scheduling" {
     }
   }
 }
-
-
-# aws elbv2 modify-rule --region eu-central-1 --no-cli-pager \
-#     --rule-arn "arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5" \
-#     --actions Type=forward,TargetGroupArn="arn:aws:elasticloadbalancing:eu-central-1:169411831568:targetgroup/dev-backend-blue/110f8e7f103856d5"
-
-# aws elbv2 describe-rules --region eu-central-1 --no-cli-pager --output text --query 'Rules[0].Actions[?Type==`forward`].TargetGroupArn' \
-#     --rule-arns arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5
