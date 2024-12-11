@@ -206,6 +206,6 @@ resource "aws_lb_listener_rule" "backend_scheduling" {
 
 
 
-aws elbv2 describe-rules --region eu-central-1 --no-cli-pager --output text \
-            --query 'Rules[0].Actions[?Type==`forward`].ForwardConfig.TargetGroups[?Weight==`0`].TargetGroupArn | [0]' \
-            --rule-arns arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5
+aws elbv2 describe-rules --region eu-central-1 --no-cli-pager --output json \
+    --query 'Rules[0].Actions[?Type==`forward`].ForwardConfig.TargetGroups[0][?Weight==`0`].TargetGroupArn' \
+    --rule-arns arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5
