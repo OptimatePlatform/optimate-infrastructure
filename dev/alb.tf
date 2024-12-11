@@ -180,9 +180,9 @@ resource "aws_lb_listener_rule" "backend" {
     }
   }
 
-  # lifecycle {
-  #   ignore_changes = [ action ]
-  # }
+  lifecycle { # Need to be ignored because target group`s weight changed every deploy by CI/CD pipeline
+    ignore_changes = [ action ]
+  }
 }
 
 
@@ -202,10 +202,3 @@ resource "aws_lb_listener_rule" "backend_scheduling" {
     }
   }
 }
-
-
-
-
-aws elbv2 describe-rules --region eu-central-1 --no-cli-pager --output json \
-    --query 'Rules[0].Actions[?Type==`forward`].ForwardConfig.TargetGroups[0][?Weight==`0`].TargetGroupArn' \
-    --rule-arns arn:aws:elasticloadbalancing:eu-central-1:169411831568:listener-rule/app/dev-alb-main/caa5584216ddafd9/fb820143f85f8316/86bb7e62bf56f2b5
