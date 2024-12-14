@@ -180,11 +180,12 @@ resource "aws_lb_listener_rule" "backend" {
     }
   }
 
-  lifecycle { # Need to be ignored because target group`s weight changed every deploy by CI/CD pipeline
-    ignore_changes = [ action ]
+  # Need to be ignored because target group`s weight changed every deploy by CI/CD pipeline
+  # In case of first deploy comment it and after deploy uncomment
+  lifecycle {
+    ignore_changes = [action]
   }
 }
-
 
 
 resource "aws_lb_listener_rule" "backend_scheduling" {
